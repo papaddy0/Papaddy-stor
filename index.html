@@ -1,171 +1,309 @@
-// ===== CONFIG & ELEMENT SDK =====
-const ADMIN_PASS = 'paddy2024';
-let adminUnlocked = { queue: false, premium: false, banner: false, website: false };
-let allData = [];
-
-// ฟังก์ชันดึงข้อมูลล่าสุด (ช่วยให้หน้าเว็บอัปเดตทันที)
-async function refreshData() {
-  if (window.dataSdk) {
-    const r = await window.dataSdk.retrieve();
-    if (r.isOk) {
-      allData = r.data;
-      renderAll();
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paddy Stro</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&amp;family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; font-family: 'Sarabun', sans-serif; }
+    .plaid-bg {
+      background-color: #fff0f5;
+      background-image:
+        linear-gradient(45deg, rgba(255,182,193,0.12) 25%, transparent 25%, transparent 75%, rgba(255,182,193,0.12) 75%),
+        linear-gradient(-45deg, rgba(255,182,193,0.12) 25%, transparent 25%, transparent 75%, rgba(255,182,193,0.12) 75%),
+        linear-gradient(to right, rgba(255,192,203,0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,192,203,0.15) 1px, transparent 1px);
+      background-size: 60px 60px, 60px 60px, 20px 20px, 20px 20px;
+      animation: bgShift 20s ease-in-out infinite;
     }
-  }
-}
-
-function renderAll() {
-  renderQueue();
-  renderProducts('premium');
-  renderProducts('banner');
-  renderProducts('website');
-}
-
-const dataHandler = {
-  onDataChanged(data) {
-    allData = data;
-    renderAll();
-  }
-};
-
-(async () => {
-  if (window.dataSdk) {
-    const r = await window.dataSdk.init(dataHandler);
-    if (r.isOk) {
-      allData = r.data;
-      renderAll();
+    @keyframes bgShift {
+      0%, 100% { background-position: 0 0, 0 0, 0 0, 0 0; }
+      50% { background-position: 30px 30px, -30px 30px, 10px 10px, 10px 10px; }
     }
-  }
-})();
-
-// ===== NAVIGATION =====
-function navigateTo(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const target = document.getElementById(pageId);
-  if (target) {
-    target.classList.add('active');
-    target.style.opacity = '0';
-    requestAnimationFrame(() => { target.style.opacity = '1'; });
-  }
-  window.scrollTo(0, 0);
-}
-
-// ===== BURST EFFECT (Fixed for Links) =====
-function createBurst(e) {
-  const rect = e.currentTarget.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-  const colors = ['#ffb6c1','#ff69b4','#f48fb1','#fce4ec','#f8bbd0'];
-  for (let i = 0; i < 8; i++) {
-    const p = document.createElement('div');
-    p.className = 'burst-particle';
-    const angle = (Math.PI * 2 / 8) * i;
-    const dist = 30 + Math.random() * 30;
-    p.style.left = cx + 'px';
-    p.style.top = cy + 'px';
-    p.style.setProperty('--bx', Math.cos(angle) * dist + 'px');
-    p.style.setProperty('--by', Math.sin(angle) * dist + 'px');
-    p.style.background = colors[Math.floor(Math.random() * colors.length)];
-    e.currentTarget.appendChild(p);
-    setTimeout(() => p.remove(), 600);
-  }
-}
-
-// ===== QUEUE MANAGEMENT (Improved Speed) =====
-async function handleAddQueue(e) {
-  e.preventDefault();
-  const btn = document.getElementById('addQueueBtn');
-  const name = document.getElementById('qf_name').value.trim();
-  const type = document.getElementById('qf_type').value;
-  const due = document.getElementById('qf_due').value;
-
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-  
-  const r = await window.dataSdk.create({
-    type: 'queue',
-    customer_name: name,
-    work_type: type,
-    status: 'รอดำเนินการ',
-    due_date: due,
-    created_at: new Date().toISOString()
-  });
-
-  if (r.isOk) {
-    showToast('เพิ่มคิวแล้วค่ะ ♡');
-    document.getElementById('addQueueForm').reset();
-    await refreshData(); // บังคับอัปเดตหน้าจอทันที
-  } else {
-    showToast('เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');
-  }
-  btn.disabled = false; btn.textContent = 'เพิ่มคิว ♡';
-}
-
-// ===== PRODUCT MANAGEMENT (Improved Speed) =====
-async function handleAddProduct(e, cat) {
-  e.preventDefault();
-  const form = e.target;
-  const btn = form.querySelector('button[type="submit"]');
-  const name = form.querySelector('input[id$="_name"]').value.trim();
-  const price = form.querySelector('input[id$="_price"]').value.trim();
-  const imageEl = form.querySelector('input[type="file"]');
-
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-
-  let imageData = '';
-  if (imageEl && imageEl.files[0]) {
-    const file = imageEl.files[0];
-    if (file.size > 400000) { // Limit 400KB
-      showToast('รูปใหญ่เกินไป (ขอไม่เกิน 400KB ค่ะ)');
-      btn.disabled = false; btn.textContent = 'เพิ่มรายการ ♡';
-      return;
+    .sparkle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+    .sparkle {
+      position: absolute; width: 6px; height: 6px;
+      background: radial-gradient(circle, #ffb6c1, #ff69b4);
+      border-radius: 50%; animation: sparkleFloat 4s ease-in-out infinite; opacity: 0;
     }
-    imageData = await new Promise(res => {
-      const rd = new FileReader();
-      rd.onload = () => res(rd.result);
-      rd.readAsDataURL(file);
-    });
-  }
+    @keyframes sparkleFloat {
+      0% { opacity: 0; transform: translateY(0) scale(0); }
+      20% { opacity: 1; transform: translateY(-20px) scale(1); }
+      80% { opacity: 0.6; transform: translateY(-60px) scale(0.8); }
+      100% { opacity: 0; transform: translateY(-100px) scale(0); }
+    }
+    .title-anim { animation: titleBounce 3s ease-in-out infinite; display: inline-block; }
+    @keyframes titleBounce {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+    .card-hover:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 30px rgba(255,105,180,0.2); }
+    .burst-particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; opacity: 0; animation: burstOut 0.6s ease-out forwards; }
+    @keyframes burstOut { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(0); } }
+    .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #fff0f5, #fce4ec, #f8bbd0); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
+    .loading-screen.hidden { opacity: 0; visibility: hidden; }
+    .page { display: none; opacity: 0; transition: opacity 0.3s; }
+    .page.active { display: block; opacity: 1; }
+    .status-waiting { background: #fff3e0; color: #e65100; }
+    .status-working { background: #e3f2fd; color: #1565c0; }
+    .status-done { background: #e8f5e9; color: #2e7d32; }
+    .status-delivered { background: #f3e5f5; color: #7b1fa2; }
+    .product-card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); border: 1px solid #fce4ec; }
+    .search-input { border: 2px solid #f8bbd0; border-radius: 99px; padding: 10px 20px 10px 44px; outline: none; width: 100%; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: linear-gradient(135deg, #f48fb1, #f06292); color: white; padding: 12px 24px; border-radius: 99px; font-weight: 600; z-index: 10000; transition: transform 0.4s; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .menu-card { border-radius: 20px; padding: 20px 16px; cursor: pointer; text-align: center; }
+    .menu-card-1 { background: linear-gradient(135deg, #fce4ec, #f8bbd0); }
+    .menu-card-2 { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+    .menu-card-3 { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+    .menu-card-4 { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+  </style>
+ </head>
+ <body class="h-full">
+  <div id="loadingScreen" class="loading-screen">
+   <div style="font-size:48px; animation: pulse 1s infinite;">🩷</div>
+   <p style="font-family:'Quicksand',sans-serif; font-weight:700; color:#ec407a; margin-top:16px;">Paddy Stro</p>
+  </div>
 
-  const r = await window.dataSdk.create({
-    type: 'product',
-    category: cat,
-    item_name: name,
-    item_price: price,
-    item_desc: imageData,
-    created_at: new Date().toISOString()
-  });
+  <div id="toast" class="toast"></div>
+  <div class="sparkle-container" id="sparkleContainer"></div>
 
-  if (r.isOk) {
-    showToast('เพิ่มรายการสำเร็จค่ะ ♡');
-    form.reset();
-    await refreshData();
-  } else {
-    showToast('ระบบมีปัญหา ลองใหม่อีกครั้งนะคะ');
-  }
-  btn.disabled = false; btn.textContent = 'เพิ่มรายการ ♡';
-}
+  <div id="appWrapper" class="h-full w-full plaid-bg overflow-y-auto" style="position:relative; z-index:2;">
+   
+   <div id="pageHome" class="page active" style="padding: 24px 16px 40px;">
+    <div style="max-width:480px; margin:0 auto; text-align:center;">
+     <h1 class="title-anim" style="font-family:'Quicksand',sans-serif; font-size:42px; font-weight:700; color:#ec407a;">Paddy Stro</h1>
+     <div style="margin-top:12px;"><span style="border:2px solid #f8bbd0; border-radius:99px; padding:8px 24px; color:#f06292; font-weight:600; background:rgba(255,255,255,0.6);">รับทำป้าย ✦ รับทำเว็บไซต์ ✦ ขายเเอพพรีเมี่ยม</span></div>
+     
+     <div style="margin-top:28px; display:flex; flex-direction:column; gap:12px;">
+      <a href="https://www.facebook.com/share/1GVj8qKV8c/" target="_blank" class="card-hover" onclick="createBurst(event)" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb); border-radius:16px; padding:16px; text-decoration:none; color:#1565c0; text-align:left;">
+       <b>📘 FaceBook</b><br><small>ติดตามผลงาน ทักสอบถาม</small>
+      </a>
+      <a href="https://lin.ee/75GNmWmi" target="_blank" class="card-hover" onclick="createBurst(event)" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0); border-radius:16px; padding:16px; text-decoration:none; color:#c2185b; text-align:left;">
+       <b>💬 Line</b><br><small>ติดต่อ สอบถาม จองคิว</small>
+      </a>
+     </div>
 
-// ฟังก์ชันลบข้อมูล (แก้ไขให้หายค้าง)
-async function doDeleteItem(backendId) {
-  const item = allData.find(d => d.__backendId === backendId);
-  if (!item) return;
-  const r = await window.dataSdk.delete(item);
-  if (r.isOk) {
-    showToast('ลบเรียบร้อยแล้วค่ะ ♡');
-    await refreshData();
-  }
-}
+     <div style="margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div class="menu-card menu-card-1" onclick="navigateTo('pagePremium')">📱 <br><b>เเอพพรีเมี่ยม ♡</b></div>
+      <div class="menu-card menu-card-2" onclick="navigateTo('pageBanner')">🎨 <br><b>ทำป้าย ♡</b></div>
+      <div class="menu-card menu-card-3" onclick="navigateTo('pageWebsite')">🌐 <br><b>ทำเว็บไซต์ ♡</b></div>
+      <div class="menu-card menu-card-4" onclick="navigateTo('pageQueue')">📋 <br><b>เช็คคิวงาน ♡</b></div>
+     </div>
+    </div>
+   </div>
 
-// ฟังก์ชันอัปเดตสถานะ (แก้ไขให้หายค้าง)
-async function updateQueueStatus(backendId, newStatus) {
-  const item = allData.find(d => d.__backendId === backendId);
-  if (!item) return;
-  item.status = newStatus;
-  const r = await window.dataSdk.update(item);
-  if (r.isOk) {
-    showToast('อัปเดตสถานะแล้วค่ะ ♡');
-    await refreshData();
-  }
-}
+   <div id="pageQueue" class="page" style="padding: 20px 16px;">
+    <div style="max-width:560px; margin:0 auto;">
+     <button onclick="navigateTo('pageHome')" style="color:#ec407a; font-weight:600;">← กลับหน้าหลัก</button>
+     <h2 style="font-size:24px; color:#ec407a; text-align:center; margin:20px 0;">เช็คคิวงาน ♡</h2>
+     <input type="text" id="queueSearch" class="search-input" placeholder="ค้นหาชื่อลูกค้า..." oninput="renderQueue()">
+     <div id="queueList" style="margin-top:20px; display:flex; flex-direction:column; gap:12px;"></div>
+     
+     <div style="margin-top:40px; border:2px dashed #f8bbd0; padding:20px; border-radius:20px;">
+       <h3 style="color:#ec407a; font-weight:700;">🔐 เพิ่มคิวงาน (สำหรับร้าน)</h3>
+       <form id="addQueueForm" onsubmit="handleAddQueue(event)" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+         <input type="text" id="qf_name" placeholder="ชื่อลูกค้า" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <select id="qf_type" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+           <option value="ทำป้าย">ทำป้าย</option>
+           <option value="ทำเว็บไซต์">ทำเว็บไซต์</option>
+           <option value="เเอพพรีเมี่ยม">เเอพพรีเมี่ยม</option>
+         </select>
+         <input type="date" id="qf_due" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <button type="submit" id="addQueueBtn" style="background:#f48fb1; color:white; padding:12px; border-radius:10px; font-weight:700;">เพิ่มคิว ♡</button>
+       </form>
+     </div>
+    </div>
+   </div>
 
-// (ฟังก์ชันอื่นๆ เช่น renderQueue, renderProducts, showToast ให้คงเดิมตามโครงสร้างของคุณ Paddy ได้เลยค่ะ)
+   <div id="pagePremium" class="page" style="padding: 20px 16px;">
+    <div style="max-width:560px; margin:0 auto;">
+     <button onclick="navigateTo('pageHome')" style="color:#ec407a; font-weight:600;">← กลับหน้าหลัก</button>
+     <h2 style="font-size:24px; color:#ec407a; text-align:center; margin:20px 0;">📱 เเอพพรีเมี่ยม ♡</h2>
+     <div id="premiumList" style="display:flex; flex-direction:column; gap:12px;"></div>
+     <div style="margin-top:40px; border:2px dashed #f8bbd0; padding:20px; border-radius:20px;">
+       <h3 style="color:#ec407a; font-weight:700;">🔐 เพิ่มสินค้า</h3>
+       <form onsubmit="handleAddProduct(event,'premium')" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+         <input type="text" id="pf_premium_name" placeholder="ชื่อเเอพ" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <input type="text" id="pf_premium_price" placeholder="ราคา" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <input type="file" id="pf_premium_image" accept="image/*" style="font-size:12px;">
+         <button type="submit" style="background:#f48fb1; color:white; padding:12px; border-radius:10px; font-weight:700;">เพิ่มสินค้า ♡</button>
+       </form>
+     </div>
+    </div>
+   </div>
+
+   <div id="pageBanner" class="page" style="padding: 20px 16px;">
+    <div style="max-width:560px; margin:0 auto;">
+     <button onclick="navigateTo('pageHome')" style="color:#ec407a; font-weight:600;">← กลับหน้าหลัก</button>
+     <h2 style="font-size:24px; color:#ec407a; text-align:center; margin:20px 0;">🎨 ทำป้าย ♡</h2>
+     <div id="bannerList" style="display:flex; flex-direction:column; gap:12px;"></div>
+     <div style="margin-top:40px; border:2px dashed #f8bbd0; padding:20px; border-radius:20px;">
+       <form onsubmit="handleAddProduct(event,'banner')" style="display:flex; flex-direction:column; gap:10px;">
+         <input type="text" id="pf_banner_name" placeholder="ชื่อบริการ" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <input type="text" id="pf_banner_price" placeholder="ราคา" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <button type="submit" style="background:#f48fb1; color:white; padding:12px; border-radius:10px; font-weight:700;">เพิ่มรายการ ♡</button>
+       </form>
+     </div>
+    </div>
+   </div>
+
+   <div id="pageWebsite" class="page" style="padding: 20px 16px;">
+    <div style="max-width:560px; margin:0 auto;">
+     <button onclick="navigateTo('pageHome')" style="color:#ec407a; font-weight:600;">← กลับหน้าหลัก</button>
+     <h2 style="font-size:24px; color:#ec407a; text-align:center; margin:20px 0;">🌐 ทำเว็บไซต์ ♡</h2>
+     <div id="websiteList" style="display:flex; flex-direction:column; gap:12px;"></div>
+     <div style="margin-top:40px; border:2px dashed #f8bbd0; padding:20px; border-radius:20px;">
+       <form onsubmit="handleAddProduct(event,'website')" style="display:flex; flex-direction:column; gap:10px;">
+         <input type="text" id="pf_website_name" placeholder="ชื่อแพ็กเกจ" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <input type="text" id="pf_website_price" placeholder="ราคา" required style="border:1px solid #ddd; padding:10px; border-radius:10px;">
+         <button type="submit" style="background:#f48fb1; color:white; padding:12px; border-radius:10px; font-weight:700;">เพิ่มรายการ ♡</button>
+       </form>
+     </div>
+    </div>
+   </div>
+
+  </div>
+
+  <script>
+    let allData = [];
+
+    // --- Core Logic ---
+    async function refreshData() {
+      if (window.dataSdk) {
+        const r = await window.dataSdk.retrieve();
+        if (r.isOk) {
+          allData = r.data;
+          renderQueue();
+          renderProducts('premium');
+          renderProducts('banner');
+          renderProducts('website');
+        }
+      }
+    }
+
+    const dataHandler = { onDataChanged(data) { allData = data; refreshData(); } };
+
+    (async () => {
+      if (window.dataSdk) {
+        await window.dataSdk.init(dataHandler);
+        await refreshData();
+      }
+      setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 1000);
+    })();
+
+    function navigateTo(p) {
+      document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+      document.getElementById(p).classList.add('active');
+      window.scrollTo(0,0);
+    }
+
+    function showToast(m) {
+      const t = document.getElementById('toast');
+      t.textContent = m; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // --- Bursts ---
+    function createBurst(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      for (let i = 0; i < 8; i++) {
+        const p = document.createElement('div');
+        p.className = 'burst-particle';
+        const angle = (Math.PI * 2 / 8) * i;
+        p.style.left = cx + 'px'; p.style.top = cy + 'px';
+        p.style.setProperty('--bx', Math.cos(angle) * 40 + 'px');
+        p.style.setProperty('--by', Math.sin(angle) * 40 + 'px');
+        p.style.background = '#f48fb1';
+        e.currentTarget.appendChild(p);
+        setTimeout(() => p.remove(), 600);
+      }
+    }
+
+    // --- Queue Render ---
+    function renderQueue() {
+      const list = document.getElementById('queueList');
+      const search = document.getElementById('queueSearch').value.toLowerCase();
+      const items = allData.filter(d => d.type === 'queue' && d.customer_name.toLowerCase().includes(search));
+      list.innerHTML = items.map((item, idx) => `
+        <div class="product-card">
+          <div style="display:flex; justify-content:space-between;">
+            <div><b>${item.customer_name}</b><br><small>${item.work_type}</small></div>
+            <span class="status-waiting" style="padding:4px 10px; border-radius:10px; font-size:12px;">${item.status}</span>
+          </div>
+          <button onclick="deleteItem('${item.__backendId}')" style="color:red; font-size:11px; margin-top:10px;">ลบคิว</button>
+        </div>
+      `).join('');
+    }
+
+    // --- Product Render ---
+    function renderProducts(cat) {
+      const list = document.getElementById(cat + 'List');
+      const items = allData.filter(d => d.type === 'product' && d.category === cat);
+      list.innerHTML = items.map(item => `
+        <div class="product-card" style="display:flex; justify-content:space-between; align-items:center;">
+          <div><b>${item.item_name}</b></div>
+          <div style="color:#c2185b; font-weight:700;">${item.item_price}</div>
+          <button onclick="deleteItem('${item.__backendId}')" style="color:red; font-size:11px;">ลบ</button>
+        </div>
+      `).join('');
+    }
+
+    // --- Actions ---
+    async function handleAddQueue(e) {
+      e.preventDefault();
+      const btn = document.getElementById('addQueueBtn');
+      btn.disabled = true;
+      const res = await window.dataSdk.create({
+        type: 'queue',
+        customer_name: document.getElementById('qf_name').value,
+        work_type: document.getElementById('qf_type').value,
+        status: 'รอดำเนินการ',
+        due_date: document.getElementById('qf_due').value
+      });
+      if (res.isOk) { showToast('เพิ่มคิวแล้ว ♡'); e.target.reset(); await refreshData(); }
+      btn.disabled = false;
+    }
+
+    async function handleAddProduct(e, cat) {
+      e.preventDefault();
+      const name = e.target.querySelector('input[id$="_name"]').value;
+      const price = e.target.querySelector('input[id$="_price"]').value;
+      const res = await window.dataSdk.create({
+        type: 'product',
+        category: cat,
+        item_name: name,
+        item_price: price
+      });
+      if (res.isOk) { showToast('สำเร็จค่ะ ♡'); e.target.reset(); await refreshData(); }
+    }
+
+    async function deleteItem(id) {
+      const item = allData.find(d => d.__backendId === id);
+      if (item) {
+        await window.dataSdk.delete(item);
+        showToast('ลบแล้วค่ะ');
+        await refreshData();
+      }
+    }
+
+    // Sparkles init
+    setInterval(() => {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      document.getElementById('sparkleContainer').appendChild(s);
+      setTimeout(() => s.remove(), 4000);
+    }, 500);
+  </script>
+ </body>
+</html>
