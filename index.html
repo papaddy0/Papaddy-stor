@@ -1,539 +1,46 @@
-<!doctype html>
-<html lang="th" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Paddy Stro</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&amp;family=Quicksand:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-  <style>
-html, body { height: 100%; margin: 0; font-family: 'Sarabun', sans-serif; }
-
-/* Plaid background */
-.plaid-bg {
-  background-color: #fff0f5;
-  background-image:
-    linear-gradient(45deg, rgba(255,182,193,0.12) 25%, transparent 25%, transparent 75%, rgba(255,182,193,0.12) 75%),
-    linear-gradient(-45deg, rgba(255,182,193,0.12) 25%, transparent 25%, transparent 75%, rgba(255,182,193,0.12) 75%),
-    linear-gradient(to right, rgba(255,192,203,0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,192,203,0.15) 1px, transparent 1px);
-  background-size: 60px 60px, 60px 60px, 20px 20px, 20px 20px;
-  animation: bgShift 20s ease-in-out infinite;
-}
-@keyframes bgShift {
-  0%, 100% { background-position: 0 0, 0 0, 0 0, 0 0; }
-  50% { background-position: 30px 30px, -30px 30px, 10px 10px, 10px 10px; }
-}
-
-/* Sparkles */
-.sparkle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-.sparkle {
-  position: absolute;
-  width: 6px; height: 6px;
-  background: radial-gradient(circle, #ffb6c1, #ff69b4);
-  border-radius: 50%;
-  animation: sparkleFloat 4s ease-in-out infinite;
-  opacity: 0;
-}
-@keyframes sparkleFloat {
-  0% { opacity: 0; transform: translateY(0) scale(0); }
-  20% { opacity: 1; transform: translateY(-20px) scale(1); }
-  80% { opacity: 0.6; transform: translateY(-60px) scale(0.8); }
-  100% { opacity: 0; transform: translateY(-100px) scale(0); }
-}
-
-/* Title animation */
-@keyframes titleBounce {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  25% { transform: translateY(-6px) rotate(1deg); }
-  50% { transform: translateY(-3px) rotate(0deg); }
-  75% { transform: translateY(-8px) rotate(-0.5deg); }
-}
-.title-anim { animation: titleBounce 3s ease-in-out infinite; display: inline-block; }
-
-/* Subtitle float */
-@keyframes subtitleFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-.subtitle-anim { animation: subtitleFloat 2.5s ease-in-out infinite; }
-
-/* Card hover */
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative; overflow: hidden;
-}
-.card-hover:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 30px rgba(255,105,180,0.2); }
-.card-hover:active { transform: scale(0.97); }
-
-/* Click burst effect */
-.burst-effect { position: relative; }
-.burst-particle {
-  position: absolute; width: 8px; height: 8px;
-  background: #ffb6c1; border-radius: 50%;
-  pointer-events: none; opacity: 0;
-  animation: burstOut 0.6s ease-out forwards;
-}
-@keyframes burstOut {
-  0% { opacity: 1; transform: translate(0,0) scale(1); }
-  100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(0); }
-}
-
-/* Loading screen */
-.loading-screen {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(135deg, #fff0f5, #fce4ec, #f8bbd0);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 9999; transition: opacity 0.5s, visibility 0.5s;
-}
-.loading-screen.hidden { opacity: 0; visibility: hidden; }
-.loading-heart {
-  font-size: 48px; animation: heartPulse 1s ease-in-out infinite;
-}
-@keyframes heartPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-}
-.loading-bar-outer {
-  width: 200px; height: 8px; background: rgba(255,255,255,0.5);
-  border-radius: 99px; margin-top: 20px; overflow: hidden;
-}
-.loading-bar-inner {
-  height: 100%; width: 0%; background: linear-gradient(90deg, #f48fb1, #f06292, #ec407a);
-  border-radius: 99px; transition: width 0.3s;
-}
-
-/* Page transitions */
-.page { display: none; opacity: 0; transition: opacity 0.3s; }
-.page.active { display: block; opacity: 1; }
-
-/* Pill badge */
-.pill-badge {
-  background: linear-gradient(135deg, #e1f5fe, #b3e5fc);
-  border-radius: 9999px; padding: 14px 32px;
-  cursor: pointer; transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(129,212,250,0.3);
-}
-.pill-badge:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(129,212,250,0.4); }
-
-/* Status badges */
-.status-waiting { background: #fff3e0; color: #e65100; }
-.status-working { background: #e3f2fd; color: #1565c0; }
-.status-done { background: #e8f5e9; color: #2e7d32; }
-.status-delivered { background: #f3e5f5; color: #7b1fa2; }
-
-/* Pastel cards for 4 menu items */
-.menu-card {
-  border-radius: 20px; padding: 20px 16px;
-  cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  text-align: center; position: relative; overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-}
-.menu-card:hover { transform: translateY(-5px) scale(1.03); }
-.menu-card:active { transform: scale(0.96); }
-.menu-card-1 { background: linear-gradient(135deg, #fce4ec, #f8bbd0); }
-.menu-card-2 { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
-.menu-card-3 { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
-.menu-card-4 { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
-
-/* Oval subtitle frame */
-.oval-frame {
-  border: 2px solid #f8bbd0;
-  border-radius: 9999px;
-  padding: 8px 28px;
-  display: inline-block;
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(4px);
-}
-
-/* Admin panel toggle */
-.admin-panel {
-  background: rgba(255,255,255,0.95);
-  border-radius: 20px;
-  border: 2px dashed #f8bbd0;
-  padding: 20px;
-  margin-top: 16px;
-}
-
-/* Toast notification */
-.toast {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
-  background: linear-gradient(135deg, #f48fb1, #f06292);
-  color: white; padding: 12px 24px; border-radius: 99px;
-  font-weight: 600; z-index: 10000; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 0 8px 25px rgba(240,98,146,0.4);
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-
-/* Inline confirm */
-.inline-confirm {
-  background: #fff3e0; border: 2px solid #ffcc80; border-radius: 12px;
-  padding: 10px 16px; display: flex; align-items: center; gap: 10px;
-}
-
-/* Scroll */
-.scroll-area { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-/* Back button */
-.back-btn {
-  background: rgba(255,255,255,0.8); border: 2px solid #f8bbd0;
-  border-radius: 99px; padding: 8px 20px; cursor: pointer;
-  transition: all 0.3s; font-weight: 600; color: #ec407a;
-  backdrop-filter: blur(4px);
-}
-.back-btn:hover { background: #fce4ec; transform: scale(1.05); }
-
-/* Product card */
-.product-card {
-  background: white; border-radius: 16px; padding: 16px;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-  transition: all 0.3s; border: 1px solid #fce4ec;
-}
-.product-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.1); transform: translateY(-2px); }
-
-/* Search input */
-.search-input {
-  border: 2px solid #f8bbd0; border-radius: 99px;
-  padding: 10px 20px 10px 44px; outline: none;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  background: white; width: 100%;
-}
-.search-input:focus { border-color: #f06292; box-shadow: 0 0 0 3px rgba(240,98,146,0.15); }
-
-/* No scrollbar but scrollable */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-</style>
-  <style>body { box-sizing: border-box; }</style>
- </head>
- <body class="h-full">
-  <!-- Loading Screen -->
-  <div id="loadingScreen" class="loading-screen">
-   <div class="loading-heart">
-    🩷
-   </div>
-   <p style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:18px; color:#ec407a; margin-top:16px;">Paddy Stro</p>
-   <p style="font-size:13px; color:#f48fb1; margin-top:4px;">กำลังโหลด...</p>
-   <div class="loading-bar-outer">
-    <div id="loadingBar" class="loading-bar-inner"></div>
-   </div>
-  </div><!-- Sparkle container -->
-  <div class="sparkle-container" id="sparkleContainer"></div><!-- Toast -->
-  <div id="toast" class="toast"></div><!-- Main wrapper -->
-  <div id="appWrapper" class="h-full w-full plaid-bg scroll-area no-scrollbar" style="position:relative; z-index:2;">
-   <!-- ============ HOME PAGE ============ -->
-   <div id="pageHome" class="page active" style="padding: 24px 16px 40px;">
-    <div style="max-width:480px; margin:0 auto; text-align:center;">
-     <!-- Shop name -->
-     <div style="margin-top: 28px;">
-      <h1 id="shopNameEl" class="title-anim" style="font-family:'Quicksand',sans-serif; font-size:42px; font-weight:700; color:#ec407a; text-shadow: 0 2px 8px rgba(236,64,122,0.15); letter-spacing:1px;">Paddy Stro</h1>
-     </div><!-- Subtitle in oval -->
-     <div class="subtitle-anim" style="margin-top:12px;">
-      <div class="oval-frame">
-       <span id="shopSubtitleEl" style="font-size:14px; color:#f06292; font-weight:600;">รับทำป้าย ✦ รับทำเว็บไซต์ ✦ ขายแอพพรีเมี่ยม</span>
-      </div>
-     </div><!-- Contact boxes -->
-     <div style="margin-top:28px; display:flex; flex-direction:column; gap:12px;">
-      <a href="https://www.facebook.com/share/1GVj8qKV8c/" target="_blank" rel="noopener noreferrer" class="card-hover burst-effect" onclick="createBurst(event)" style="display:block; background:linear-gradient(135deg,#e3f2fd,#bbdefb); border-radius:16px; padding:16px 20px; text-decoration:none; color:#1565c0; text-align:left;">
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:16px;">
-        📘 FaceBook
-       </div>
-       <div style="font-size:13px; margin-top:4px; opacity:0.8;">
-        ติดตามผลงาน ทักสอบถาม
-       </div></a> <a href="https://lin.ee/75GNmWmi" target="_blank" rel="noopener noreferrer" class="card-hover burst-effect" onclick="createBurst(event)" style="display:block; background:linear-gradient(135deg,#fce4ec,#f8bbd0); border-radius:16px; padding:16px 20px; text-decoration:none; color:#c2185b; text-align:left;">
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:16px;">
-        💬 Line
-       </div>
-       <div style="font-size:13px; margin-top:4px; opacity:0.8;">
-        ติดต่อ สอบถาม จองคิว
-       </div></a>
-     </div><!-- Check queue pill -->
-     <div style="margin-top:28px;">
-      <div class="pill-badge burst-effect" onclick="createBurst(event); navigateTo('pageQueue')" style="display:inline-block; cursor:pointer;">
-       <span style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:17px; color:#0288d1;">เช็คคิวงาน ♡</span>
-      </div>
-     </div><!-- 4 Menu cards -->
-     <div style="margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:14px;">
-      <div class="menu-card menu-card-1 burst-effect" onclick="createBurst(event); navigateTo('pagePremium')">
-       <div style="font-size:28px;">
-        📱
-       </div>
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:15px; color:#c2185b; margin-top:8px;">
-        แอพพรีเมี่ยม ♡
-       </div>
-      </div>
-      <div class="menu-card menu-card-2 burst-effect" onclick="createBurst(event); navigateTo('pageBanner')">
-       <div style="font-size:28px;">
-        🎨
-       </div>
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:15px; color:#2e7d32; margin-top:8px;">
-        ทำป้าย ♡
-       </div>
-      </div>
-      <div class="menu-card menu-card-3 burst-effect" onclick="createBurst(event); navigateTo('pageWebsite')">
-       <div style="font-size:28px;">
-        🌐
-       </div>
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:15px; color:#1565c0; margin-top:8px;">
-        ทำเว็บไซต์ ♡
-       </div>
-      </div>
-      <div class="menu-card menu-card-4 burst-effect" onclick="createBurst(event); navigateTo('pageContact')">
-       <div style="font-size:28px;">
-        💌
-       </div>
-       <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:15px; color:#e65100; margin-top:8px;">
-        ช่องทางการติดต่อ ♡
-       </div>
-      </div>
-     </div><!-- Read before order -->
-     <div style="margin-top:36px; text-align:left; background:rgba(255,255,255,0.75); border-radius:20px; padding:24px; border:1px solid #fce4ec; backdrop-filter:blur(4px);">
-      <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:18px; color:#ec407a; text-align:center; margin-bottom:16px;">อ่านก่อนสั่งซื้อนะคะ ✿</h2>
-      <div style="margin-bottom:16px;">
-       <h3 style="font-weight:700; color:#f06292; font-size:15px; margin-bottom:6px;">🎨 สั่งงานป้าย</h3>
-       <p style="font-size:13px; color:#666; line-height:1.8;">ปกติถ้าไม่มีคิวจะรองานภายใน 24 ชั่วโมง หากติดคิวรอรับงานภายใน 1-3 วันหรืออาจจะเร็วกว่านั้นแล้วแต่คิว ตอนสั่งงานบรีฟงานให้เรียบร้อย ลูกค้าสามารถแก้ไขได้เพียง 2 ครั้ง บรีฟให้ทางร้านอย่างชัดเจน หลังงานเสร็จลูกค้าจะได้รับงานผ่านไดร์ฟ ลูกค้าต้องบันทึกงานภายใน 24 ชม. ทางร้านเก็บไดร์ฟงานลูกค้าไว้เพียงแค่ 1 วัน เกิน 1 วันทำใหม่คิดราคาเต็มทุกกรณีนะคะ</p>
-      </div>
-      <div style="margin-bottom:16px;">
-       <h3 style="font-weight:700; color:#f06292; font-size:15px; margin-bottom:6px;">🌐 สั่งทำเว็บไซต์</h3>
-       <p style="font-size:13px; color:#666; line-height:1.8;">ลูกค้าต้องบรีฟงานให้ละเอียดมากๆ และถ้ามีภาพร่างเว็บอยากได้จะดีมากๆค่ะ โดยปกติรองาน 1-3 วัน มีคิวติดคิวรองานประมาณ 3-5 วัน เว็บไซต์นึงใช้เวลาทำนาน อยากให้ลูกค้าเข้าใจนะคะ บรีฟโทนสีถ้ามีโค้ดสีจะดีมากค่ะ เพราะใจลูกค้ากับทางร้านไม่ตรงกัน เลยไม่รู้ว่าชอบเฉดไหน อยากให้ลูกค้าส่งโค้ดสีมามากกว่าค่ะ</p>
-      </div>
-      <div>
-       <h3 style="font-weight:700; color:#f06292; font-size:15px; margin-bottom:6px;">📱 แอพพรีเมี่ยม</h3>
-       <p style="font-size:13px; color:#666; line-height:1.8;">กรณีโดนปิดเมลทางร้านรับเคลมได้แค่ 1 รอบ หากรหัสที่เคลมโดนปิดอีกทางร้านไม่รับเคลมทุกกรณี กรณีที่ทางร้านไม่ได้รับเคลม เมลล็อค จอเต็ม 2 กรณีนี้ต้องรอเท่านั้นนะคะ จะไม่รับเคลมทุกกรณี หลังทางร้านส่งรหัสไปให้แล้ว กรณีเข้าไปแล้วมีปัญหาเช่น จอเต็ม ทางร้านไม่รับคืนเงินทุกกรณีนะคะ</p>
-      </div>
-     </div>
-     <div style="margin-top:24px; text-align:center; font-size:12px; color:#f48fb1;">
-      © Paddy Stro ♡ with love
-     </div>
-    </div>
-   </div><!-- ============ QUEUE PAGE ============ -->
-   <div id="pageQueue" class="page" style="padding: 20px 16px 40px;">
-    <div style="max-width:560px; margin:0 auto;">
-     <button class="back-btn" onclick="navigateTo('pageHome')">← กลับหน้าหลัก</button>
-     <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; color:#ec407a; text-align:center; margin-top:16px;">เช็คคิวงาน ♡</h2><!-- Search -->
-     <div style="position:relative; margin-top:16px;">
-      <i data-lucide="search" style="position:absolute; left:16px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:#f48fb1;"></i> <input type="text" id="queueSearch" class="search-input" placeholder="ค้นหาชื่อลูกค้า..." oninput="renderQueue()">
-     </div><!-- Queue list -->
-     <div id="queueList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;"></div>
-     <div id="noQueueMsg" style="text-align:center; padding:40px 0; color:#f48fb1; display:none;">
-      <div style="font-size:36px;">
-       📋
-      </div>
-      <p style="margin-top:8px;">ยังไม่มีคิวงานค่ะ</p>
-     </div><!-- Admin toggle -->
-     <div style="margin-top:24px; text-align:center;">
-      <button id="adminToggleBtn" onclick="toggleAdmin()" style="background:none; border:2px dashed #f8bbd0; border-radius:99px; padding:8px 20px; color:#f48fb1; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.3s;"> 🔐 ระบบจัดการหลังบ้าน </button>
-     </div><!-- Admin panel -->
-     <div id="adminPanel" class="admin-panel" style="display:none;">
-      <div id="adminLock" style="text-align:center;">
-       <p style="font-size:14px; color:#ec407a; font-weight:600; margin-bottom:12px;">ใส่รหัสผ่านเพื่อเข้าใช้งาน</p><input type="password" id="adminPassInput" placeholder="รหัสผ่าน" style="border:2px solid #f8bbd0; border-radius:12px; padding:10px 16px; outline:none; width:180px; text-align:center;"> <br><button onclick="checkAdminPass()" style="margin-top:10px; background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:99px; padding:10px 28px; cursor:pointer; font-weight:600;">เข้าสู่ระบบ</button>
-       <p id="adminError" style="color:#e53935; font-size:12px; margin-top:8px; display:none;">รหัสผ่านไม่ถูกต้อง</p>
-      </div>
-      <div id="adminContent" style="display:none;">
-       <h3 style="font-family:'Quicksand',sans-serif; font-weight:700; color:#ec407a; font-size:16px; margin-bottom:12px;">เพิ่มคิวงานใหม่</h3>
-       <form id="addQueueForm" onsubmit="handleAddQueue(event)" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="qf_name" placeholder="ชื่อลูกค้า" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;" onfocus="this.style.borderColor='#f48fb1'" onblur="this.style.borderColor='#e0e0e0'"> <select id="qf_type" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px; background:white;"> <option value="">เลือกประเภทงาน</option> <option value="ทำป้าย">ทำป้าย</option> <option value="ทำเว็บไซต์">ทำเว็บไซต์</option> <option value="แอพพรีเมี่ยม">แอพพรีเมี่ยม</option> <option value="อื่นๆ">อื่นๆ</option> </select> <input type="date" id="qf_due" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <button type="submit" id="addQueueBtn" style="background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:12px; padding:12px; cursor:pointer; font-weight:700; font-size:15px; transition:all 0.3s;"> เพิ่มคิว ♡ </button>
-       </form>
-      </div>
-     </div>
-    </div>
-   </div><!-- ============ PREMIUM APP PAGE ============ -->
-   <div id="pagePremium" class="page" style="padding: 20px 16px 40px;">
-    <div style="max-width:560px; margin:0 auto;">
-     <button class="back-btn" onclick="navigateTo('pageHome')">← กลับหน้าหลัก</button>
-     <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; color:#ec407a; text-align:center; margin-top:16px;">📱 แอพพรีเมี่ยม ♡</h2>
-     <div id="premiumList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;"></div>
-     <div id="noPremiumMsg" style="text-align:center; padding:40px 0; color:#f48fb1; display:none;">
-      <div style="font-size:36px;">
-       📱
-      </div>
-      <p style="margin-top:8px;">ยังไม่มีสินค้าค่ะ</p>
-     </div><!-- Admin -->
-     <div style="margin-top:24px; text-align:center;">
-      <button onclick="toggleProductAdmin('premium')" style="background:none; border:2px dashed #f8bbd0; border-radius:99px; padding:8px 20px; color:#f48fb1; cursor:pointer; font-size:13px; font-weight:600;">🔐 จัดการสินค้า</button>
-     </div>
-     <div id="premiumAdminPanel" class="admin-panel" style="display:none;">
-      <div id="premiumAdminLock" style="text-align:center;">
-       <p style="font-size:14px; color:#ec407a; font-weight:600; margin-bottom:12px;">ใส่รหัสผ่าน</p><input type="password" id="premiumPass" placeholder="รหัสผ่าน" style="border:2px solid #f8bbd0; border-radius:12px; padding:10px 16px; outline:none; width:180px; text-align:center;"> <br><button onclick="checkProductPass('premium')" style="margin-top:10px; background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:99px; padding:10px 28px; cursor:pointer; font-weight:600;">เข้าสู่ระบบ</button>
-       <p id="premiumPassError" style="color:#e53935; font-size:12px; margin-top:8px; display:none;">รหัสไม่ถูกต้อง</p>
-      </div>
-      <div id="premiumAdminContent" style="display:none;">
-       <h3 style="font-family:'Quicksand',sans-serif; font-weight:700; color:#ec407a; font-size:16px; margin-bottom:12px;">เพิ่มสินค้า</h3>
-       <form onsubmit="handleAddProduct(event,'premium')" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="pf_premium_name" placeholder="ชื่อสินค้า" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_premium_price" placeholder="ราคา (เช่น 29 บาท)" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_premium_desc" placeholder="รายละเอียด (ไม่บังคับ)" style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <label style="font-size:13px; color:#f48fb1; font-weight:600;">เลือกรูปภาพ (ไม่บังคับ)</label> <input type="file" id="pf_premium_image" accept="image/*" style="border:2px solid #e0e0e0; border-radius:12px; padding:8px 14px; outline:none; font-size:14px;"> <button type="submit" style="background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:12px; padding:12px; cursor:pointer; font-weight:700;">เพิ่มสินค้า ♡</button>
-       </form>
-      </div>
-     </div>
-    </div>
-   </div><!-- ============ BANNER PAGE ============ -->
-   <div id="pageBanner" class="page" style="padding: 20px 16px 40px;">
-    <div style="max-width:560px; margin:0 auto;">
-     <button class="back-btn" onclick="navigateTo('pageHome')">← กลับหน้าหลัก</button>
-     <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; color:#ec407a; text-align:center; margin-top:16px;">🎨 ทำป้าย ♡</h2>
-     <div id="bannerList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;"></div>
-     <div id="noBannerMsg" style="text-align:center; padding:40px 0; color:#f48fb1; display:none;">
-      <div style="font-size:36px;">
-       🎨
-      </div>
-      <p style="margin-top:8px;">ยังไม่มีสินค้าค่ะ</p>
-     </div>
-     <div style="margin-top:24px; text-align:center;">
-      <button onclick="toggleProductAdmin('banner')" style="background:none; border:2px dashed #f8bbd0; border-radius:99px; padding:8px 20px; color:#f48fb1; cursor:pointer; font-size:13px; font-weight:600;">🔐 จัดการสินค้า</button>
-     </div>
-     <div id="bannerAdminPanel" class="admin-panel" style="display:none;">
-      <div id="bannerAdminLock" style="text-align:center;">
-       <p style="font-size:14px; color:#ec407a; font-weight:600; margin-bottom:12px;">ใส่รหัสผ่าน</p><input type="password" id="bannerPass" placeholder="รหัสผ่าน" style="border:2px solid #f8bbd0; border-radius:12px; padding:10px 16px; outline:none; width:180px; text-align:center;"> <br><button onclick="checkProductPass('banner')" style="margin-top:10px; background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:99px; padding:10px 28px; cursor:pointer; font-weight:600;">เข้าสู่ระบบ</button>
-       <p id="bannerPassError" style="color:#e53935; font-size:12px; margin-top:8px; display:none;">รหัสไม่ถูกต้อง</p>
-      </div>
-      <div id="bannerAdminContent" style="display:none;">
-       <h3 style="font-family:'Quicksand',sans-serif; font-weight:700; color:#ec407a; font-size:16px; margin-bottom:12px;">เพิ่มรายการ</h3>
-       <form onsubmit="handleAddProduct(event,'banner')" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="pf_banner_name" placeholder="ชื่อบริการ" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_banner_price" placeholder="ราคา" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_banner_desc" placeholder="รายละเอียด" style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <button type="submit" style="background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:12px; padding:12px; cursor:pointer; font-weight:700;">เพิ่มรายการ ♡</button>
-       </form>
-      </div>
-     </div>
-    </div>
-   </div><!-- ============ WEBSITE PAGE ============ -->
-   <div id="pageWebsite" class="page" style="padding: 20px 16px 40px;">
-    <div style="max-width:560px; margin:0 auto;">
-     <button class="back-btn" onclick="navigateTo('pageHome')">← กลับหน้าหลัก</button>
-     <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; color:#ec407a; text-align:center; margin-top:16px;">🌐 ทำเว็บไซต์ ♡</h2>
-     <div id="websiteList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;"></div>
-     <div id="noWebsiteMsg" style="text-align:center; padding:40px 0; color:#f48fb1; display:none;">
-      <div style="font-size:36px;">
-       🌐
-      </div>
-      <p style="margin-top:8px;">ยังไม่มีรายการค่ะ</p>
-     </div>
-     <div style="margin-top:24px; text-align:center;">
-      <button onclick="toggleProductAdmin('website')" style="background:none; border:2px dashed #f8bbd0; border-radius:99px; padding:8px 20px; color:#f48fb1; cursor:pointer; font-size:13px; font-weight:600;">🔐 จัดการสินค้า</button>
-     </div>
-     <div id="websiteAdminPanel" class="admin-panel" style="display:none;">
-      <div id="websiteAdminLock" style="text-align:center;">
-       <p style="font-size:14px; color:#ec407a; font-weight:600; margin-bottom:12px;">ใส่รหัสผ่าน</p><input type="password" id="websitePass" placeholder="รหัสผ่าน" style="border:2px solid #f8bbd0; border-radius:12px; padding:10px 16px; outline:none; width:180px; text-align:center;"> <br><button onclick="checkProductPass('website')" style="margin-top:10px; background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:99px; padding:10px 28px; cursor:pointer; font-weight:600;">เข้าสู่ระบบ</button>
-       <p id="websitePassError" style="color:#e53935; font-size:12px; margin-top:8px; display:none;">รหัสไม่ถูกต้อง</p>
-      </div>
-      <div id="websiteAdminContent" style="display:none;">
-       <h3 style="font-family:'Quicksand',sans-serif; font-weight:700; color:#ec407a; font-size:16px; margin-bottom:12px;">เพิ่มรายการ</h3>
-       <form onsubmit="handleAddProduct(event,'website')" style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="pf_website_name" placeholder="ชื่อบริการ" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_website_price" placeholder="ราคา" required style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <input type="text" id="pf_website_desc" placeholder="รายละเอียด" style="border:2px solid #e0e0e0; border-radius:12px; padding:10px 14px; outline:none; font-size:14px;"> <button type="submit" style="background:linear-gradient(135deg,#f48fb1,#ec407a); color:white; border:none; border-radius:12px; padding:12px; cursor:pointer; font-weight:700;">เพิ่มรายการ ♡</button>
-       </form>
-      </div>
-     </div>
-    </div>
-   </div><!-- ============ CONTACT PAGE ============ -->
-   <div id="pageContact" class="page" style="padding: 20px 16px 40px;">
-    <div style="max-width:480px; margin:0 auto; text-align:center;">
-     <button class="back-btn" onclick="navigateTo('pageHome')" style="display:inline-block;">← กลับหน้าหลัก</button>
-     <h2 style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; color:#ec407a; margin-top:16px;">💌 ช่องทางการติดต่อ ♡</h2>
-     <div style="margin-top:24px; display:flex; flex-direction:column; gap:16px;">
-      <a href="https://www.facebook.com/share/1GVj8qKV8c/" target="_blank" rel="noopener noreferrer" class="card-hover burst-effect" onclick="createBurst(event)" style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg,#e3f2fd,#bbdefb); border-radius:20px; padding:20px 24px; text-decoration:none; color:#1565c0;">
-       <div style="font-size:36px;">
-        📘
-       </div>
-       <div style="text-align:left;">
-        <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:18px;">
-         FaceBook
-        </div>
-        <div style="font-size:13px; opacity:0.8; margin-top:2px;">
-         ติดตามผลงาน ทักสอบถาม
-        </div>
-       </div></a> <a href="https://lin.ee/75GNmWmi" target="_blank" rel="noopener noreferrer" class="card-hover burst-effect" onclick="createBurst(event)" style="display:flex; align-items:center; gap:16px; background:linear-gradient(135deg,#fce4ec,#f8bbd0); border-radius:20px; padding:20px 24px; text-decoration:none; color:#c2185b;">
-       <div style="font-size:36px;">
-        💬
-       </div>
-       <div style="text-align:left;">
-        <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:18px;">
-         Line
-        </div>
-        <div style="font-size:13px; opacity:0.8; margin-top:2px;">
-         ติดต่อ สอบถาม จองคิว
-        </div>
-       </div></a>
-     </div>
-    </div>
-   </div>
-  </div><!-- end appWrapper -->
-  <script>
 // ===== CONFIG & ELEMENT SDK =====
-const defaultConfig = {
-  shop_name: 'Paddy Stro',
-  shop_subtitle: 'รับทำป้าย ✦ รับทำเว็บไซต์ ✦ ขายแอพพรีเมี่ยม',
-  background_color: '#fff0f5',
-  surface_color: '#ffffff',
-  text_color: '#ec407a',
-  primary_action_color: '#f06292',
-  secondary_action_color: '#f48fb1',
-  font_family: 'Quicksand',
-  font_size: 16
-};
-
-function applyConfig(config) {
-  const name = config.shop_name || defaultConfig.shop_name;
-  const sub = config.shop_subtitle || defaultConfig.shop_subtitle;
-  const el1 = document.getElementById('shopNameEl');
-  const el2 = document.getElementById('shopSubtitleEl');
-  if (el1) el1.textContent = name;
-  if (el2) el2.textContent = sub;
-}
-
-if (window.elementSdk) {
-  window.elementSdk.init({
-    defaultConfig,
-    onConfigChange: async (config) => { applyConfig(config); },
-    mapToCapabilities: (config) => ({
-      recolorables: [
-        { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); }},
-        { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }},
-        { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); }},
-        { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); }},
-        { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); }}
-      ],
-      borderables: [],
-      fontEditable: {
-        get: () => config.font_family || defaultConfig.font_family,
-        set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
-      },
-      fontSizeable: {
-        get: () => config.font_size || defaultConfig.font_size,
-        set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
-      }
-    }),
-    mapToEditPanelValues: (config) => new Map([
-      ['shop_name', config.shop_name || defaultConfig.shop_name],
-      ['shop_subtitle', config.shop_subtitle || defaultConfig.shop_subtitle]
-    ])
-  });
-}
-
-// ===== DATA SDK =====
-let allData = [];
 const ADMIN_PASS = 'paddy2024';
 let adminUnlocked = { queue: false, premium: false, banner: false, website: false };
+let allData = [];
+
+// ฟังก์ชันดึงข้อมูลล่าสุด (ช่วยให้หน้าเว็บอัปเดตทันที)
+async function refreshData() {
+  if (window.dataSdk) {
+    const r = await window.dataSdk.retrieve();
+    if (r.isOk) {
+      allData = r.data;
+      renderAll();
+    }
+  }
+}
+
+function renderAll() {
+  renderQueue();
+  renderProducts('premium');
+  renderProducts('banner');
+  renderProducts('website');
+}
 
 const dataHandler = {
   onDataChanged(data) {
     allData = data;
-    renderQueue();
-    renderProducts('premium');
-    renderProducts('banner');
-    renderProducts('website');
+    renderAll();
   }
 };
 
 (async () => {
   if (window.dataSdk) {
     const r = await window.dataSdk.init(dataHandler);
-    if (!r.isOk) console.error('Data SDK init failed');
+    if (r.isOk) {
+      allData = r.data;
+      renderAll();
+    }
   }
 })();
 
 // ===== NAVIGATION =====
 function navigateTo(pageId) {
-  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(pageId);
   if (target) {
     target.classList.add('active');
@@ -543,43 +50,7 @@ function navigateTo(pageId) {
   window.scrollTo(0, 0);
 }
 
-// ===== LOADING SCREEN =====
-(function initLoading() {
-  const bar = document.getElementById('loadingBar');
-  let progress = 0;
-  const iv = setInterval(() => {
-    progress += Math.random() * 30 + 10;
-    if (progress > 100) progress = 100;
-    bar.style.width = progress + '%';
-    if (progress >= 100) {
-      clearInterval(iv);
-      setTimeout(() => {
-        document.getElementById('loadingScreen').classList.add('hidden');
-      }, 400);
-    }
-  }, 200);
-})();
-
-// ===== SPARKLES =====
-(function initSparkles() {
-  const container = document.getElementById('sparkleContainer');
-  function addSparkle() {
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.top = Math.random() * 100 + '%';
-    s.style.animationDelay = Math.random() * 2 + 's';
-    s.style.animationDuration = (3 + Math.random() * 3) + 's';
-    const size = 3 + Math.random() * 5;
-    s.style.width = size + 'px';
-    s.style.height = size + 'px';
-    container.appendChild(s);
-    setTimeout(() => s.remove(), 6000);
-  }
-  setInterval(addSparkle, 300);
-})();
-
-// ===== BURST EFFECT =====
+// ===== BURST EFFECT (Fixed for Links) =====
 function createBurst(e) {
   const rect = e.currentTarget.getBoundingClientRect();
   const cx = e.clientX - rect.left;
@@ -600,331 +71,101 @@ function createBurst(e) {
   }
 }
 
-// ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ===== QUEUE MANAGEMENT =====
-function getQueueItems() {
-  return allData.filter(d => d.type === 'queue').sort((a, b) => {
-    const da = new Date(a.created_at || 0);
-    const db = new Date(b.created_at || 0);
-    return da - db;
-  });
-}
-
-function renderQueue() {
-  const list = document.getElementById('queueList');
-  const noMsg = document.getElementById('noQueueMsg');
-  const searchVal = (document.getElementById('queueSearch')?.value || '').trim().toLowerCase();
-  let items = getQueueItems();
-  if (searchVal) items = items.filter(i => (i.customer_name || '').toLowerCase().includes(searchVal));
-
-  if (items.length === 0) {
-    list.innerHTML = '';
-    noMsg.style.display = 'block';
-    return;
-  }
-  noMsg.style.display = 'none';
-
-  const existingMap = new Map([...list.children].map(el => [el.dataset.id, el]));
-  const fragment = document.createDocumentFragment();
-
-  items.forEach((item, idx) => {
-    const id = item.__backendId;
-    let card = existingMap.get(id);
-    if (card) {
-      updateQueueCard(card, item, idx);
-      existingMap.delete(id);
-    } else {
-      card = createQueueCard(item, idx);
-      card.dataset.id = id;
-    }
-    fragment.appendChild(card);
-  });
-
-  existingMap.forEach(el => el.remove());
-  list.innerHTML = '';
-  list.appendChild(fragment);
-}
-
-function getStatusInfo(status) {
-  const map = {
-    'รอดำเนินการ': { cls: 'status-waiting', emoji: '⏳' },
-    'กำลังทำ': { cls: 'status-working', emoji: '🔨' },
-    'เสร็จแล้ว': { cls: 'status-done', emoji: '✅' },
-    'ส่งงานแล้ว': { cls: 'status-delivered', emoji: '📦' }
-  };
-  return map[status] || { cls: 'status-waiting', emoji: '📋' };
-}
-
-function createQueueCard(item, idx) {
-  const card = document.createElement('div');
-  card.className = 'product-card';
-  updateQueueCard(card, item, idx);
-  return card;
-}
-
-function updateQueueCard(card, item, idx) {
-  const si = getStatusInfo(item.status || 'รอดำเนินการ');
-  const isAdmin = adminUnlocked.queue;
-  const dueStr = item.due_date ? new Date(item.due_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
-
-  let adminHtml = '';
-  if (isAdmin) {
-    adminHtml = `
-      <div style="margin-top:12px; padding-top:12px; border-top:1px dashed #f8bbd0; display:flex; flex-wrap:wrap; gap:6px;">
-        <select onchange="updateQueueStatus('${item.__backendId}', this.value)" style="border:1px solid #e0e0e0; border-radius:8px; padding:4px 8px; font-size:12px; background:white;">
-          <option ${item.status === 'รอดำเนินการ' ? 'selected' : ''}>รอดำเนินการ</option>
-          <option ${item.status === 'กำลังทำ' ? 'selected' : ''}>กำลังทำ</option>
-          <option ${item.status === 'เสร็จแล้ว' ? 'selected' : ''}>เสร็จแล้ว</option>
-          <option ${item.status === 'ส่งงานแล้ว' ? 'selected' : ''}>ส่งงานแล้ว</option>
-        </select>
-        <button onclick="confirmDeleteItem('${item.__backendId}', this)" style="background:#ffebee; color:#e53935; border:none; border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; font-weight:600;">ลบ</button>
-      </div>
-    `;
-  }
-
-  card.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:start;">
-      <div>
-        <div style="font-size:11px; color:#f48fb1; font-weight:700;">คิวที่ ${idx + 1}</div>
-        <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:16px; color:#333; margin-top:2px;">${escHtml(item.customer_name || '')}</div>
-        <div style="font-size:13px; color:#888; margin-top:4px;">📌 ${escHtml(item.work_type || '-')}</div>
-        <div style="font-size:12px; color:#aaa; margin-top:2px;">📅 กำหนดส่ง: ${dueStr}</div>
-      </div>
-      <span class="${si.cls}" style="padding:4px 12px; border-radius:99px; font-size:12px; font-weight:600; white-space:nowrap;">
-        ${si.emoji} ${escHtml(item.status || 'รอดำเนินการ')}
-      </span>
-    </div>
-    ${adminHtml}
-  `;
-}
-
-async function updateQueueStatus(backendId, newStatus) {
-  const item = allData.find(d => d.__backendId === backendId);
-  if (!item) return;
-  item.status = newStatus;
-  const r = await window.dataSdk.update(item);
-  if (r.isOk) showToast('อัพเดทสถานะแล้ว ♡');
-  else showToast('เกิดข้อผิดพลาด');
-}
-
-function confirmDeleteItem(backendId, btn) {
-  const wrapper = btn.parentElement;
-  const existing = wrapper.querySelector('.inline-confirm');
-  if (existing) { existing.remove(); return; }
-  const conf = document.createElement('div');
-  conf.className = 'inline-confirm';
-  conf.style.marginTop = '8px';
-  conf.innerHTML = `
-    <span style="font-size:13px; color:#e65100;">ลบรายการนี้?</span>
-    <button onclick="doDeleteItem('${backendId}')" style="background:#e53935; color:white; border:none; border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; font-weight:600;">ยืนยัน</button>
-    <button onclick="this.parentElement.remove()" style="background:#e0e0e0; color:#333; border:none; border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer;">ยกเลิก</button>
-  `;
-  wrapper.appendChild(conf);
-}
-
-async function doDeleteItem(backendId) {
-  const item = allData.find(d => d.__backendId === backendId);
-  if (!item) return;
-  const r = await window.dataSdk.delete(item);
-  if (r.isOk) showToast('ลบแล้ว ♡');
-  else showToast('เกิดข้อผิดพลาด');
-}
-
+// ===== QUEUE MANAGEMENT (Improved Speed) =====
 async function handleAddQueue(e) {
   e.preventDefault();
-  if (allData.length >= 999) { showToast('ข้อมูลเต็มแล้ว (999 รายการ)'); return; }
   const btn = document.getElementById('addQueueBtn');
-  btn.disabled = true; btn.textContent = 'กำลังเพิ่ม...';
+  const name = document.getElementById('qf_name').value.trim();
+  const type = document.getElementById('qf_type').value;
+  const due = document.getElementById('qf_due').value;
+
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  
   const r = await window.dataSdk.create({
     type: 'queue',
-    customer_name: document.getElementById('qf_name').value.trim(),
-    work_type: document.getElementById('qf_type').value,
+    customer_name: name,
+    work_type: type,
     status: 'รอดำเนินการ',
-    due_date: document.getElementById('qf_due').value,
-    created_at: new Date().toISOString(),
-    category: '',
-    item_name: '',
-    item_price: '',
-    item_desc: '',
-    order_index: 0
+    due_date: due,
+    created_at: new Date().toISOString()
   });
-  btn.disabled = false; btn.textContent = 'เพิ่มคิว ♡';
+
   if (r.isOk) {
-    showToast('เพิ่มคิวแล้ว ♡');
+    showToast('เพิ่มคิวแล้วค่ะ ♡');
     document.getElementById('addQueueForm').reset();
-  } else showToast('เกิดข้อผิดพลาด');
-}
-
-// ===== ADMIN AUTH =====
-function toggleAdmin() {
-  const panel = document.getElementById('adminPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function checkAdminPass() {
-  const pass = document.getElementById('adminPassInput').value;
-  if (pass === ADMIN_PASS) {
-    adminUnlocked.queue = true;
-    document.getElementById('adminLock').style.display = 'none';
-    document.getElementById('adminContent').style.display = 'block';
-    document.getElementById('adminError').style.display = 'none';
-    renderQueue();
+    await refreshData(); // บังคับอัปเดตหน้าจอทันที
   } else {
-    document.getElementById('adminError').style.display = 'block';
+    showToast('เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');
   }
+  btn.disabled = false; btn.textContent = 'เพิ่มคิว ♡';
 }
 
-function toggleProductAdmin(cat) {
-  const panel = document.getElementById(cat + 'AdminPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function checkProductPass(cat) {
-  const pass = document.getElementById(cat + 'Pass').value;
-  if (pass === ADMIN_PASS) {
-    adminUnlocked[cat] = true;
-    document.getElementById(cat + 'AdminLock').style.display = 'none';
-    document.getElementById(cat + 'AdminContent').style.display = 'block';
-    document.getElementById(cat + 'PassError').style.display = 'none';
-    renderProducts(cat);
-  } else {
-    document.getElementById(cat + 'PassError').style.display = 'block';
-  }
-}
-
-// ===== PRODUCTS =====
-function getProductItems(category) {
-  return allData.filter(d => d.type === 'product' && d.category === category).sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
-}
-
-function renderProducts(cat) {
-  const list = document.getElementById(cat + 'List');
-  const noMsg = document.getElementById('no' + cat.charAt(0).toUpperCase() + cat.slice(1) + 'Msg');
-  const items = getProductItems(cat);
-
-  if (items.length === 0) {
-    list.innerHTML = '';
-    if (noMsg) noMsg.style.display = 'block';
-    return;
-  }
-  if (noMsg) noMsg.style.display = 'none';
-
-  const existingMap = new Map([...list.children].map(el => [el.dataset.id, el]));
-  const fragment = document.createDocumentFragment();
-
-  items.forEach(item => {
-    const id = item.__backendId;
-    let card = existingMap.get(id);
-    if (card) {
-      updateProductCard(card, item, cat);
-      existingMap.delete(id);
-    } else {
-      card = createProductCard(item, cat);
-      card.dataset.id = id;
-    }
-    fragment.appendChild(card);
-  });
-
-  existingMap.forEach(el => el.remove());
-  list.innerHTML = '';
-  list.appendChild(fragment);
-}
-
-function createProductCard(item, cat) {
-  const card = document.createElement('div');
-  card.className = 'product-card';
-  updateProductCard(card, item, cat);
-  return card;
-}
-
-function updateProductCard(card, item, cat) {
-  const isAdmin = adminUnlocked[cat];
-  let adminHtml = '';
-  if (isAdmin) {
-    adminHtml = `
-      <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #f8bbd0; display:flex; gap:6px;">
-        <button onclick="confirmDeleteItem('${item.__backendId}', this)" style="background:#ffebee; color:#e53935; border:none; border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; font-weight:600;">ลบ</button>
-      </div>
-    `;
-  }
-  const imgHtml = item.item_desc && item.item_desc.startsWith('data:image') ? `<img src="${escHtml(item.item_desc)}" style="width:100%; height:120px; object-fit:cover; border-radius:12px; margin-bottom:10px;" onerror="this.style.background='#f0f0f0'; this.style.height='80px'; this.alt='รูปภาพไม่สามารถโหลดได้';">` : '';
-  card.innerHTML = `
-    ${imgHtml}
-    <div style="display:flex; justify-content:space-between; align-items:start;">
-      <div style="flex:1;">
-        <div style="font-family:'Quicksand',sans-serif; font-weight:700; font-size:16px; color:#333;">${escHtml(item.item_name || '')}</div>
-      </div>
-      <div style="background:linear-gradient(135deg,#fce4ec,#f8bbd0); padding:6px 14px; border-radius:99px; font-weight:700; color:#c2185b; font-size:14px; white-space:nowrap;">
-        ${escHtml(item.item_price || '')}
-      </div>
-    </div>
-    ${adminHtml}
-  `;
-}
-
+// ===== PRODUCT MANAGEMENT (Improved Speed) =====
 async function handleAddProduct(e, cat) {
   e.preventDefault();
-  if (allData.length >= 999) { showToast('ข้อมูลเต็มแล้ว (999 รายการ)'); return; }
-  const nameEl = document.getElementById('pf_' + cat + '_name');
-  const priceEl = document.getElementById('pf_' + cat + '_price');
-  const imageEl = document.getElementById('pf_' + cat + '_image');
-  const btn = e.target.querySelector('button[type="submit"]');
-  btn.disabled = true; const origText = btn.textContent; btn.textContent = 'กำลังเพิ่ม...';
+  const form = e.target;
+  const btn = form.querySelector('button[type="submit"]');
+  const name = form.querySelector('input[id$="_name"]').value.trim();
+  const price = form.querySelector('input[id$="_price"]').value.trim();
+  const imageEl = form.querySelector('input[type="file"]');
+
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
 
   let imageData = '';
-  if (imageEl && imageEl.files && imageEl.files[0]) {
+  if (imageEl && imageEl.files[0]) {
     const file = imageEl.files[0];
-    if (file.size > 500000) {
-      showToast('ไฟล์รูปภาพใหญ่เกินไป (ต้องน้อยกว่า 500KB)');
-      btn.disabled = false; btn.textContent = origText;
+    if (file.size > 400000) { // Limit 400KB
+      showToast('รูปใหญ่เกินไป (ขอไม่เกิน 400KB ค่ะ)');
+      btn.disabled = false; btn.textContent = 'เพิ่มรายการ ♡';
       return;
     }
-    imageData = await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
+    imageData = await new Promise(res => {
+      const rd = new FileReader();
+      rd.onload = () => res(rd.result);
+      rd.readAsDataURL(file);
     });
   }
 
   const r = await window.dataSdk.create({
     type: 'product',
     category: cat,
-    item_name: nameEl.value.trim(),
-    item_price: priceEl.value.trim(),
+    item_name: name,
+    item_price: price,
     item_desc: imageData,
-    customer_name: '',
-    work_type: '',
-    status: '',
-    due_date: '',
-    created_at: new Date().toISOString(),
-    order_index: getProductItems(cat).length
+    created_at: new Date().toISOString()
   });
 
-  btn.disabled = false; btn.textContent = origText;
   if (r.isOk) {
-    showToast('เพิ่มรายการแล้ว ♡');
-    e.target.reset();
-  } else showToast('เกิดข้อผิดพลาด');
+    showToast('เพิ่มรายการสำเร็จค่ะ ♡');
+    form.reset();
+    await refreshData();
+  } else {
+    showToast('ระบบมีปัญหา ลองใหม่อีกครั้งนะคะ');
+  }
+  btn.disabled = false; btn.textContent = 'เพิ่มรายการ ♡';
 }
 
-// ===== UTILITIES =====
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
+// ฟังก์ชันลบข้อมูล (แก้ไขให้หายค้าง)
+async function doDeleteItem(backendId) {
+  const item = allData.find(d => d.__backendId === backendId);
+  if (!item) return;
+  const r = await window.dataSdk.delete(item);
+  if (r.isOk) {
+    showToast('ลบเรียบร้อยแล้วค่ะ ♡');
+    await refreshData();
+  }
 }
 
-// Init Lucide icons
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
-});
-</script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9df0e364c215fcf8',t:'MTc3Mzk2OTU2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-        </html>
+// ฟังก์ชันอัปเดตสถานะ (แก้ไขให้หายค้าง)
+async function updateQueueStatus(backendId, newStatus) {
+  const item = allData.find(d => d.__backendId === backendId);
+  if (!item) return;
+  item.status = newStatus;
+  const r = await window.dataSdk.update(item);
+  if (r.isOk) {
+    showToast('อัปเดตสถานะแล้วค่ะ ♡');
+    await refreshData();
+  }
+}
+
+// (ฟังก์ชันอื่นๆ เช่น renderQueue, renderProducts, showToast ให้คงเดิมตามโครงสร้างของคุณ Paddy ได้เลยค่ะ)
